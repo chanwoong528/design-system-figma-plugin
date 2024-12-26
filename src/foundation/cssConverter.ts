@@ -12,13 +12,8 @@ type CssProps = Record<string, string>;
 // }
 
 interface StateCssProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
-}
-
-interface VariantBaseTypes {
-  type: string[];
-  color: string[];
-  state: string[];
 }
 
 export const covertJsonToCss = async (
@@ -35,17 +30,37 @@ export const covertJsonToCss = async (
         }),
       );
 
-      if (!!node.variantProperties?.type) {
-        resultCssProps[node.variantProperties.type] = {
-          ...resultCssProps[node.variantProperties.type],
-          [node.variantProperties.state]: {
-            nodeType: node.type,
-            cssProps: cssProps,
-            childrenCss: childNodeCssProps.filter(
-              (child) => child !== undefined,
-            ),
-          },
-        };
+      if (node.variantProperties?.type) {
+        if (node.variantProperties.color) {
+          if (!resultCssProps[node.variantProperties.type]) {
+            resultCssProps[node.variantProperties.type] = {};
+          }
+          resultCssProps[node.variantProperties.type][
+            node.variantProperties.color
+          ] = {
+            ...resultCssProps[node.variantProperties.type]?.[
+              node.variantProperties.color
+            ],
+            [node.variantProperties.state]: {
+              nodeType: node.type,
+              cssProps: cssProps,
+              childrenCss: childNodeCssProps.filter(
+                (child) => child !== undefined,
+              ),
+            },
+          };
+        } else {
+          resultCssProps[node.variantProperties.type] = {
+            ...resultCssProps[node.variantProperties.type],
+            [node.variantProperties.state]: {
+              nodeType: node.type,
+              cssProps: cssProps,
+              childrenCss: childNodeCssProps.filter(
+                (child) => child !== undefined,
+              ),
+            },
+          };
+        }
       }
     }),
   );
@@ -93,20 +108,55 @@ const cssCleanUp = (stateCssProps: StateCssProps) => {
   const types = Object.keys(stateCssProps);
 
   types.forEach((type) => {
-    const statesByType = Object.keys(stateCssProps[type]);
-    if (!!statesByType.includes("Default")) {
-      const defaultCssProps = stateCssProps[type]["Default"].cssProps;
-      statesByType.forEach((state) => {
-        if (state !== "Default") {
-          const currentCssProps = stateCssProps[type][state].cssProps;
-          const filteredCssProps = filterDefaultCssProperty(
-            defaultCssProps,
-            currentCssProps,
-          );
-          stateCssProps[type][state].cssProps = filteredCssProps;
-        }
-      });
+    const typeColors = Object.keys(stateCssProps[type]);
+
+    if (!typeColors || typeColors.length === 0) {
+      if (types.includes("Default")) {
+        const defaultCssProps = stateCssProps[type]["Default"].cssProps;
+        types.forEach((state) => {
+          if (state !== "Default") {
+            const currentCssProps = stateCssProps[type][state].cssProps;
+            const filteredCssProps = filterDefaultCssProperty(
+              defaultCssProps,
+              currentCssProps,
+            );
+            stateCssProps[type][state].cssProps = filteredCssProps;
+          }
+        });
+      }
     }
+
+    typeColors.forEach((color) => {
+      const statesByType = Object.keys(stateCssProps[type][color]);
+
+      if (statesByType.includes("Default")) {
+        const defaultCssProps = stateCssProps[type][color]["Default"].cssProps;
+        statesByType.forEach((state) => {
+          if (state !== "Default") {
+            const currentCssProps = stateCssProps[type][color][state].cssProps;
+            const filteredCssProps = filterDefaultCssProperty(
+              defaultCssProps,
+              currentCssProps,
+            );
+            stateCssProps[type][color][state].cssProps = filteredCssProps;
+          }
+        });
+      }
+    });
+
+    // if (statesByType.includes("Default")) {
+    //   const defaultCssProps = stateCssProps[type]["Default"].cssProps;
+    //   statesByType.forEach((state) => {
+    //     if (state !== "Default") {
+    //       const currentCssProps = stateCssProps[type][state].cssProps;
+    //       const filteredCssProps = filterDefaultCssProperty(
+    //         defaultCssProps,
+    //         currentCssProps,
+    //       );
+    //       stateCssProps[type][state].cssProps = filteredCssProps;
+    //     }
+    //   });
+    // }
   });
 
   return stateCssProps;

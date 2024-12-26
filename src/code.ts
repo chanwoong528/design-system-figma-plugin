@@ -7,7 +7,7 @@
 // full browser environment (See https://www.figma.com/plugin-docs/how-plugins-run).
 
 import axios from "axios";
-import { genTypoGraphy } from "./foundation/typo";
+
 import { getnBtnJson } from "./foundation/btn";
 
 // This shows the HTML page in "ui.html".
@@ -27,6 +27,8 @@ figma.ui.onmessage = async (event) => {
 
 figma.on("selectionchange", async () => {
   const btnArr = await getnBtnJson();
+  console.log("btnArr>> ", btnArr);
+  // console.log("btnArr>> ", btnArr);
   // const btnArr = await getnBtnJson();
   // const typoArr = await genTypoGraphy();
   // console.log("figma.codegen.on typo>> ", typoArr);
